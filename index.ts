@@ -36,6 +36,7 @@ app.post<any, any, LoginArgs>('/login',
   (req, res) => {
 
     const { username, password } = req.body
+    
     // Use username and password to create token.
     const raw = fs.readFileSync('db.json', 'utf8')
     const db: DbSchema = JSON.parse(raw)
@@ -51,7 +52,7 @@ app.post<any, any, LoginArgs>('/login',
       return
     }
 
-    const token = jwt.sign({ username: user.username }, SECRET)
+    const token = jwt.sign({ username: user.username ,password: user.password}, SECRET)
     return res.status(200).json({
       message: 'Login succesfully',
       token: ({token})
@@ -114,13 +115,13 @@ type DepositArgs = Pick<User, 'balance'>
 app.post<any,any,DepositArgs>('/deposit',
   body('amount').isInt({ min: 1 }),
   (req, res) => {
-    const token = req.query.token as string
-    const {balance} = req.body 
-    console.log(balance)
+    
+    //console.log(amount)
     //Is amount <= 0 ?
     if (!validationResult(req).isEmpty())
       return res.status(400).json({ message: "Invalid data" })
-    
+      const token = req.query.token as string
+      const amount = req.body.balance
     try{
       const { username } = jwt.verify(token, SECRET) as JWTPayload 
       const raw = fs.readFileSync('db.json', 'utf8')
@@ -132,17 +133,17 @@ app.post<any,any,DepositArgs>('/deposit',
         if(user.username === username){
           // console.log(user.balance)
           // console.log(amount)
-          //user.balance += amount
+          user.balance += amount
 
         }
       })
       const user = db.users.find(user => user.username === username)
       const balance = user?.balance
       //console.log(balance)
-      // res.status(200).json({
-      //   message:'Deposit successfully',
-      //   balance:({balance})
-      // })
+      res.status(200).json({
+        message:'Deposit successfully',
+        balance:(balance)
+      })
       //fs.writeFileSync('db.json', JSON.stringify(db))
       // console.log(amount)
     }catch(e){
